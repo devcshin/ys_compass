@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <title>WHERE'S MY SUPYBARA?🍉</title>
 
+  <!-- Open Graph 메타 -->
   <meta property="og:title" content="WHERE'S MY SUPYBARA?🍉">
   <meta property="og:image" content="https://devcshin.github.io/ys_compass/spbr.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://devcshin.github.io/ys_compass/">
-  
-  
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 모바일 대응 -->
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <style>
     body {
       text-align:center;
@@ -19,9 +20,9 @@
       padding:20px;
     }
     #arrow {
-      font-size: 40px; /* 기존 100px → 2배 */
-      width: 40vw; /* 기존 20vw → 2배 */
-      max-width: 300px; /* 기존 150px → 2배 */
+      font-size: 40px;
+      width: 40vw;
+      max-width: 300px;
       transition: transform 0.2s linear;
       display: inline-block;
     }
@@ -43,6 +44,7 @@
       margin-top: 10px;
     }
   </style>
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-database-compat.js"></script>
@@ -83,15 +85,61 @@
     }
   }
 
-  // ===== 위치 업데이트 (내 위치) =====
+  // ===== Android 여부 체크 =====
+  const isAndroid = /Android/i.test(navigator.userAgent);
+
+  // ===== 토스트 메시지 =====
+  function showToast(message) {
+    let existing = document.getElementById("toastMsg");
+    if (existing) existing.remove();
+
+    const toast = document.createElement("div");
+    toast.id = "toastMsg";
+    toast.innerText = message;
+    toast.style.position = "fixed";
+    toast.style.bottom = "50px";
+    toast.style.left = "50%";
+    toast.style.transform = "translateX(-50%)";
+    toast.style.backgroundColor = "rgba(0,0,0,0.7)";
+    toast.style.color = "#fff";
+    toast.style.padding = "10px 20px";
+    toast.style.borderRadius = "10px";
+    toast.style.fontSize = "16px";
+    toast.style.zIndex = "9999";
+    toast.style.opacity = "0";
+    toast.style.transition = "opacity 0.3s";
+    document.body.appendChild(toast);
+
+    setTimeout(() => { toast.style.opacity = "1"; }, 50);
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      setTimeout(() => toast.remove(), 300);
+    }, 2000);
+  }
+
+  // ===== 위치 업로드 (Android 전용) =====
+  function uploadLocation() {
+    if (!currentPos) return;
+    firebase.database().ref("locations/userA").set({
+      lat: currentPos.lat,
+      lng: currentPos.lng
+    }).then(() => {
+      console.log("Android 위치 업로드 완료:", currentPos.lat, currentPos.lng);
+      showToast("위치 업데이트 완료 ✅");
+    }).catch(err => console.error(err));
+  }
+
+  // ===== 내 위치 업데이트 =====
   navigator.geolocation.watchPosition(pos => {
     currentPos = {
       lat: pos.coords.latitude,
       lng: pos.coords.longitude
     };
+
+    if (isAndroid) uploadLocation();
   }, err => console.error(err), { enableHighAccuracy:true });
 
-  // ===== Firebase에서 실시간 목표 좌표 불러오기 =====
+  // ===== Firebase에서 실시간 목표 좌표 가져오기 =====
   const targetRef = db.ref("locations/userA");
   targetRef.on("value", snapshot => {
     const data = snapshot.val();
