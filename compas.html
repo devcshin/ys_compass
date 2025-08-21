@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>수피바라 방향 화살표🍉</title>
+  <title>실시간 목표 방향 화살표</title>
   <style>
     body { text-align:center; font-family:sans-serif; }
     #arrow {
@@ -10,13 +10,18 @@
       transition: transform 0.2s linear;
       display: inline-block;
     }
+    #targetCoord {
+      font-size: 16px;
+      margin: 5px 0 15px 0;
+    }
   </style>
   <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-database-compat.js"></script>
 </head>
 <body>
-  <h2>실시간 목표 방향</h2>
+  <h2>실시간 수피바라의 방향 🍉</h2>
+  <div id="targetCoord">수피바라 좌표 불러오는 중...</div>
   <div id="arrow">⬆️</div>
   <div id="info"></div>
   <button onclick="requestPermission()">iOS 권한 요청</button>
@@ -24,13 +29,13 @@
 <script>
   // ===== Firebase 설정 (본인 프로젝트로 변경) =====
   const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+    apiKey: "AIzaSyAOHwpN6pTIgFK2RkxYMNoCnkXaotTg6bY",
+    authDomain: "retrofittester-4f36c.firebaseapp.com",
+    databaseURL: "https://retrofittester-4f36c-default-rtdb.firebaseio.com",
+    projectId: "retrofittester-4f36c",
+    storageBucket: "retrofittester-4f36c.firebasestorage.app",
+    messagingSenderId: "398490449949",
+    appId: "1:398490449949:web:65fee5344c68ccb078aef4"
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
@@ -65,8 +70,11 @@
     if (data && data.lat && data.lng) {
       target.lat = data.lat;
       target.lng = data.lng;
-      document.getElementById("info").innerText = 
-        `실시간 목표 좌표: (${target.lat.toFixed(5)}, ${target.lng.toFixed(5)})`;
+      // 제목 아래에 표시
+      document.getElementById("targetCoord").innerText = 
+        `목표 좌표: (${target.lat.toFixed(5)}, ${target.lng.toFixed(5)})`;
+    } else {
+      document.getElementById("targetCoord").innerText = "목표 좌표 없음";
     }
   });
 
