@@ -2,17 +2,37 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>실시간 목표 방향 화살표</title>
+  <title>WHERE'S MY SUPYBARA?🍉</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 모바일 대응 -->
   <style>
-    body { text-align:center; font-family:sans-serif; }
+    body {
+      text-align:center;
+      font-family:sans-serif;
+      margin:0;
+      padding:20px;
+    }
     #arrow {
-      font-size: 100px;
+      width: 20vw; /* 화면 가로의 20% */
+      max-width: 150px; /* 너무 커지지 않도록 최대값 */
       transition: transform 0.2s linear;
       display: inline-block;
     }
     #targetCoord {
-      font-size: 16px;
+      font-size: 4vw;
+      max-font-size: 20px;
       margin: 5px 0 15px 0;
+      word-break: break-word;
+    }
+    #info {
+      font-size: 4vw;
+      max-font-size: 18px;
+      margin-top:10px;
+    }
+    button {
+      font-size: 4vw;
+      max-font-size: 18px;
+      padding: 8px 16px;
+      margin-top: 10px;
     }
   </style>
   <!-- Firebase SDK -->
@@ -20,11 +40,11 @@
   <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-database-compat.js"></script>
 </head>
 <body>
-  <h2>실시간 수피바라의 방향 🍉</h2>
-  <div id="targetCoord">수피바라 좌표 불러오는 중...</div>
-  <div id="arrow">⬆️</div>
+  <h2>🧭 실시간 수피바라의 방향 🍉</h2>
+  <div id="targetCoord">목표 좌표 불러오는 중...</div>
+  <img id="arrow" src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Basic_arrow.svg/1200px-Basic_arrow.svg.png" />
   <div id="info"></div>
-  <button onclick="requestPermission()">iOS 권한 요청</button>
+  <button onclick="requestPermission()">🍏 iOS 권한 요청</button>
 
 <script>
   // ===== Firebase 설정 (본인 프로젝트로 변경) =====
@@ -64,13 +84,12 @@
   }, err => console.error(err), { enableHighAccuracy:true });
 
   // ===== Firebase에서 실시간 목표 좌표 불러오기 =====
-  const targetRef = db.ref("locations/userA"); // userA 위치를 목표로
+  const targetRef = db.ref("locations/userA");
   targetRef.on("value", snapshot => {
     const data = snapshot.val();
     if (data && data.lat && data.lng) {
       target.lat = data.lat;
       target.lng = data.lng;
-      // 제목 아래에 표시
       document.getElementById("targetCoord").innerText = 
         `목표 좌표: (${target.lat.toFixed(5)}, ${target.lng.toFixed(5)})`;
     } else {
@@ -85,9 +104,9 @@
   function handleOrientation(event) {
     let heading;
     if (event.webkitCompassHeading) {
-      heading = event.webkitCompassHeading; // iOS (북쪽 기준)
+      heading = event.webkitCompassHeading;
     } else if (event.absolute && event.alpha !== null) {
-      heading = 360 - event.alpha; // Android (대략적 보정, 북쪽 기준)
+      heading = 360 - event.alpha;
     }
     if (heading !== undefined) {
       currentHeading = heading;
@@ -104,7 +123,6 @@
       `나침반:${currentHeading.toFixed(1)}° / 목표:${bearing.toFixed(1)}° / 화살표:${diff.toFixed(1)}°`;
   }
 
-  // ===== 두 좌표 사이 방위각 계산 =====
   function computeBearing(from, to) {
     const φ1 = from.lat * Math.PI/180;
     const φ2 = to.lat * Math.PI/180;
