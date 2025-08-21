@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>위치 공유 데모</title>
+  <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-database-compat.js"></script>
+</head>
+<body>
+  <h1>위치 공유 데모 (수피바라의 방향)</h1>
+  <button onclick="uploadLocation()">내 위치 업로드</button>
+  <button onclick="getLocation()">상대 위치 조회</button>
+
+  <p id="status"></p>
+
+  <script>
+    // 🔹 Firebase 설정 (자신의 프로젝트 정보로 교체)
+    const firebaseConfig = {
+    apiKey: "AIzaSyAOHwpN6pTIgFK2RkxYMNoCnkXaotTg6bY",
+    authDomain: "retrofittester-4f36c.firebaseapp.com",
+    databaseURL: "https://retrofittester-4f36c-default-rtdb.firebaseio.com",
+    projectId: "retrofittester-4f36c",
+    storageBucket: "retrofittester-4f36c.firebasestorage.app",
+    messagingSenderId: "398490449949",
+    appId: "1:398490449949:web:65fee5344c68ccb078aef4"
+    };
+
+    // Firebase 초기화
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // ✅ 내 위치 업로드
+    function uploadLocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+
+          // DB에 업로드
+          firebase.database().ref("locations/userA").set({
+            lat: lat,
+            lng: lng,
+            timestamp: Date.now()
+          });
+
+          document.getElementById("status").innerText = 
+            `업로드 완료: (${lat}, ${lng})`;
+        });
+      } else {
+        alert("GPS를 지원하지 않는 기기입니다.");
+      }
+    }
+
+    // ✅ 상대 위치 조회
+    function getLocation() {
+      firebase.database().ref("locations/userA").once("value")
+        .then(snapshot => {
+          const data = snapshot.val();
+          if (data) {
+            document.getElementById("status").innerText =
+              `상대 위치: (${data.lat}, ${data.lng})`;
+          } else {
+            document.getElementById("status").innerText = "위치 데이터 없음";
+          }
+        });
+    }
+  </script>
+</body>
+</html>
