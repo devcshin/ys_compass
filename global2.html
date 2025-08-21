@@ -8,8 +8,8 @@
     #arrow { width: 100px; margin-top: 50px; transition: transform 0.2s linear; }
   </style>
   <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/12.1.0/firebase-database.js"></script>
 </head>
 <body>
   <h1>타겟 좌표 나침반</h1>
@@ -23,13 +23,13 @@
 
     // 🔹 Firebase 설정 (본인 프로젝트 값으로 바꾸세요)
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT.firebaseapp.com",
-      databaseURL: "https://YOUR_PROJECT.firebaseio.com",
-      projectId: "YOUR_PROJECT",
-      storageBucket: "YOUR_PROJECT.appspot.com",
-      messagingSenderId: "SENDER_ID",
-      appId: "APP_ID"
+    apiKey: "AIzaSyAOHwpN6pTIgFK2RkxYMNoCnkXaotTg6bY",
+    authDomain: "retrofittester-4f36c.firebaseapp.com",
+    databaseURL: "https://retrofittester-4f36c-default-rtdb.firebaseio.com",
+    projectId: "retrofittester-4f36c",
+    storageBucket: "retrofittester-4f36c.firebasestorage.app",
+    messagingSenderId: "398490449949",
+    appId: "1:398490449949:web:65fee5344c68ccb078aef4"
     };
 
     const app = initializeApp(firebaseConfig);
