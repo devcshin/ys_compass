@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>서울시청 방향 화살표</title>
+  <title>수피바라 방향 화살표🍉</title>
   <style>
     body { text-align:center; font-family:sans-serif; }
     #arrow {
@@ -11,74 +11,102 @@
       display: inline-block;
     }
   </style>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 </head>
 <body>
-  <h2>서울시청 방향</h2>
+  <h2>실시간 목표 방향</h2>
   <div id="arrow">⬆️</div>
   <div id="info"></div>
   <button onclick="requestPermission()">iOS 권한 요청</button>
 
 <script>
-const target = { lat: 37.5662952, lng: 126.9779451 }; // 서울시청
-let currentPos = null;
-let currentHeading = 0;
-
-// 권한 요청 (iOS)
-function requestPermission() {
-  if (DeviceOrientationEvent.requestPermission) {
-    DeviceOrientationEvent.requestPermission().then(res => {
-      if (res === "granted") {
-        window.addEventListener("deviceorientationabsolute", handleOrientation, true);
-      }
-    });
-  }
-}
-
-// 위치 업데이트
-navigator.geolocation.watchPosition(pos => {
-  currentPos = {
-    lat: pos.coords.latitude,
-    lng: pos.coords.longitude
+  // ===== Firebase 설정 (본인 프로젝트로 변경) =====
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+    databaseURL: "https://YOUR_PROJECT_ID.firebaseio.com",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_PROJECT_ID.appspot.com",
+    messagingSenderId: "YOUR_SENDER_ID",
+    appId: "YOUR_APP_ID"
   };
-}, err => console.error(err), { enableHighAccuracy:true });
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
 
-// 기기 방향 이벤트
-window.addEventListener("deviceorientationabsolute", handleOrientation, true);
-window.addEventListener("deviceorientation", handleOrientation, true);
+  let target = { lat: 37.5662952, lng: 126.9779451 }; // 초기값 서울시청
+  let currentPos = null;
+  let currentHeading = 0;
 
-function handleOrientation(event) {
-  let heading;
-  if (event.webkitCompassHeading) {
-    heading = event.webkitCompassHeading; // iOS (북쪽 기준)
-  } else if (event.absolute && event.alpha !== null) {
-    heading = 360 - event.alpha; // Android (대략적 보정, 북쪽 기준)
+  // ===== iOS 권한 요청 =====
+  function requestPermission() {
+    if (DeviceOrientationEvent.requestPermission) {
+      DeviceOrientationEvent.requestPermission().then(res => {
+        if (res === "granted") {
+          window.addEventListener("deviceorientationabsolute", handleOrientation, true);
+        }
+      });
+    }
   }
-  if (heading !== undefined) {
-    currentHeading = heading;
-    updateArrow();
+
+  // ===== 위치 업데이트 (내 위치) =====
+  navigator.geolocation.watchPosition(pos => {
+    currentPos = {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude
+    };
+  }, err => console.error(err), { enableHighAccuracy:true });
+
+  // ===== Firebase에서 실시간 목표 좌표 불러오기 =====
+  const targetRef = db.ref("locations/userA"); // userA 위치를 목표로
+  targetRef.on("value", snapshot => {
+    const data = snapshot.val();
+    if (data && data.lat && data.lng) {
+      target.lat = data.lat;
+      target.lng = data.lng;
+      document.getElementById("info").innerText = 
+        `실시간 목표 좌표: (${target.lat.toFixed(5)}, ${target.lng.toFixed(5)})`;
+    }
+  });
+
+  // ===== 기기 방향 이벤트 =====
+  window.addEventListener("deviceorientationabsolute", handleOrientation, true);
+  window.addEventListener("deviceorientation", handleOrientation, true);
+
+  function handleOrientation(event) {
+    let heading;
+    if (event.webkitCompassHeading) {
+      heading = event.webkitCompassHeading; // iOS (북쪽 기준)
+    } else if (event.absolute && event.alpha !== null) {
+      heading = 360 - event.alpha; // Android (대략적 보정, 북쪽 기준)
+    }
+    if (heading !== undefined) {
+      currentHeading = heading;
+      updateArrow();
+    }
   }
-}
 
-function updateArrow() {
-  if (!currentPos) return;
-  const bearing = computeBearing(currentPos, target);
-  let diff = (bearing - currentHeading + 360) % 360;
-  document.getElementById("arrow").style.transform = `rotate(${diff}deg)`;
-  document.getElementById("info").innerText =
-    `나침반:${currentHeading.toFixed(1)}° / 서울시청:${bearing.toFixed(1)}° / 화살표:${diff.toFixed(1)}°`;
-}
+  function updateArrow() {
+    if (!currentPos || !target.lat) return;
+    const bearing = computeBearing(currentPos, target);
+    let diff = (bearing - currentHeading + 360) % 360;
+    document.getElementById("arrow").style.transform = `rotate(${diff}deg)`;
+    document.getElementById("info").innerText = 
+      `나침반:${currentHeading.toFixed(1)}° / 목표:${bearing.toFixed(1)}° / 화살표:${diff.toFixed(1)}°`;
+  }
 
-// 두 좌표 사이 방위각
-function computeBearing(from, to) {
-  const φ1 = from.lat * Math.PI/180;
-  const φ2 = to.lat * Math.PI/180;
-  const Δλ = (to.lng - from.lng) * Math.PI/180;
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1)*Math.sin(φ2) -
-            Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
-  const θ = Math.atan2(y, x);
-  return (θ*180/Math.PI + 360) % 360;
-}
+  // ===== 두 좌표 사이 방위각 계산 =====
+  function computeBearing(from, to) {
+    const φ1 = from.lat * Math.PI/180;
+    const φ2 = to.lat * Math.PI/180;
+    const Δλ = (to.lng - from.lng) * Math.PI/180;
+    const y = Math.sin(Δλ) * Math.cos(φ2);
+    const x = Math.cos(φ1)*Math.sin(φ2) -
+              Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+    const θ = Math.atan2(y, x);
+    return (θ*180/Math.PI + 360) % 360;
+  }
 </script>
 </body>
 </html>
