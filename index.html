@@ -29,19 +29,24 @@
     #targetCoord {
       font-size: 4vw;
       max-font-size: 20px;
-      margin: 5px 0 15px 0;
+      margin: 5px 0 10px 0;
       word-break: break-word;
     }
     #info {
       font-size: 4vw;
       max-font-size: 18px;
-      margin-top:10px;
+      margin-top:5px;
     }
     #thank_you {
       font-size: 4vw;
       max-font-size: 18px;
       margin-top:30px;
       color:#cccfff;
+    }
+    #distance {
+      font-size: 4vw;
+      max-font-size: 18px;
+      margin-top:5px;
     }
     button {
       font-size: 4vw;
@@ -60,6 +65,7 @@
   <div id="targetCoord">목표 좌표 불러오는 중...</div>
   <div id="arrow">⬆️</div>
   <div id="info"></div>
+  <div id="distance"></div>
   <button onclick="requestPermission()">🍏 iOS 권한 요청</button>
   <div id="thank_you">항상 나에게 와줘서 고마워</div>
 
@@ -180,12 +186,17 @@
   function updateArrow() {
     if (!currentPos || !target.lat) return;
     const bearing = computeBearing(currentPos, target);
-    let diff = (bearing - currentHeading + 360) % 360;
+    const diff = (bearing - currentHeading + 360) % 360;
     document.getElementById("arrow").style.transform = `rotate(${diff}deg)`;
     document.getElementById("info").innerText = 
       `나침반:${currentHeading.toFixed(1)}° / 목표:${bearing.toFixed(1)}° / 화살표:${diff.toFixed(1)}°`;
+
+    // 목표까지 직선 거리(m) 계산
+    const distance = computeDistanceMeters(currentPos, target);
+    document.getElementById("distance").innerText = `목표까지 거리: ${distance.toFixed(1)} m`;
   }
 
+  // ===== 두 좌표 사이 방위각 =====
   function computeBearing(from, to) {
     const φ1 = from.lat * Math.PI/180;
     const φ2 = to.lat * Math.PI/180;
@@ -196,6 +207,23 @@
     const θ = Math.atan2(y, x);
     return (θ*180/Math.PI + 360) % 360;
   }
+
+  // ===== 두 좌표 사이 직선 거리(m) =====
+  function computeDistanceMeters(from, to) {
+    const R = 6371000; // 지구 반경(m)
+    const φ1 = from.lat * Math.PI / 180;
+    const φ2 = to.lat * Math.PI / 180;
+    const Δφ = (to.lat - from.lat) * Math.PI / 180;
+    const Δλ = (to.lng - from.lng) * Math.PI / 180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c;
+  }
+
 </script>
 </body>
 </html>
