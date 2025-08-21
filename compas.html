@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>서울시청 나침반</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    #arrow {
+      font-size: 100px;
+      display: inline-block;
+      transition: transform 0.2s linear;
+    }
+  </style>
+</head>
+<body>
+  <h1>서울시청 방향 나침반</h1>
+  <div id="arrow">🧭</div>
+  <p id="status">위치 정보를 불러오는 중...</p>
+
+  <script>
+    const partnerLat = 37.5665;  // 서울시청 위도
+    const partnerLon = 126.9780; // 서울시청 경도
+    let myLat = null, myLon = null;
+
+    // 방위각 계산 함수
+    function getBearing(lat1, lon1, lat2, lon2) {
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+      lat1 = lat1 * Math.PI / 180;
+      lat2 = lat2 * Math.PI / 180;
+
+      const y = Math.sin(dLon) * Math.cos(lat2);
+      const x = Math.cos(lat1) * Math.sin(lat2) -
+                Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+      return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+    }
+
+    // 내 위치 가져오기
+    navigator.geolocation.getCurrentPosition((pos) => {
+      myLat = pos.coords.latitude;
+      myLon = pos.coords.longitude;
+      document.getElementById("status").innerText = "서울시청 방향을 표시합니다!";
+    }, (err) => {
+      document.getElementById("status").innerText = "위치 접근 불가: " + err.message;
+    });
+
+    // 기기 방향 이벤트 (북쪽 0° 기준)
+    window.addEventListener("deviceorientationabsolute", (event) => {
+      if (!myLat || !myLon) return;
+
+      let heading = event.alpha; // 단위: 도(degree), 0~360
+      if (heading === null) {
+        document.getElementById("status").innerText = "나침반 센서 지원 안함";
+        return;
+      }
+
+      // 서울시청 방위각
+      let bearing = getBearing(myLat, myLon, partnerLat, partnerLon);
+      let angle = (bearing - heading + 360) % 360;
+
+      // 화살표 회전
+      document.getElementById("arrow").style.transform = `rotate(${angle}deg)`;
+    });
+
+    // iOS Safari 권한 요청 (iOS13+)
+    document.body.addEventListener("click", () => {
+      if (typeof(DeviceOrientationEvent) !== "undefined" &&
+          typeof(DeviceOrientationEvent.requestPermission) === "function") {
+        DeviceOrientationEvent.requestPermission().then((response) => {
+          if (response === "granted") {
+            document.getElementById("status").innerText = "나침반 권한 허용됨";
+          } else {
+            document.getElementById("status").innerText = "나침반 권한 거부됨";
+          }
+        });
+      }
+    });
+  </script>
+</body>
+</html>
