@@ -2,82 +2,83 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>서울시청 나침반</title>
+  <title>서울시청 방향 화살표</title>
   <style>
-    body {
-      font-family: sans-serif;
-      text-align: center;
-      margin-top: 50px;
-    }
+    body { text-align:center; font-family:sans-serif; }
     #arrow {
       font-size: 100px;
-      display: inline-block;
       transition: transform 0.2s linear;
+      display: inline-block;
     }
   </style>
 </head>
 <body>
-  <h1>서울시청 방향 나침반</h1>
-  <div id="arrow">👆</div>
-  <p id="status">위치 정보를 불러오는 중...</p>
+  <h2>서울시청 방향</h2>
+  <div id="arrow">⬆️</div>
+  <div id="info"></div>
+  <button onclick="requestPermission()">iOS 권한 요청</button>
 
-  <script>
-    const partnerLat = 37.5665;  // 서울시청 위도
-    const partnerLon = 126.9780; // 서울시청 경도
-    let myLat = null, myLon = null;
+<script>
+const target = { lat: 37.5662952, lng: 126.9779451 }; // 서울시청
+let currentPos = null;
+let currentHeading = 0;
 
-    // 방위각 계산 함수
-    function getBearing(lat1, lon1, lat2, lon2) {
-      const dLon = (lon2 - lon1) * Math.PI / 180;
-      lat1 = lat1 * Math.PI / 180;
-      lat2 = lat2 * Math.PI / 180;
-
-      const y = Math.sin(dLon) * Math.cos(lat2);
-      const x = Math.cos(lat1) * Math.sin(lat2) -
-                Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
-      return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
-    }
-
-    // 내 위치 가져오기
-    navigator.geolocation.getCurrentPosition((pos) => {
-      myLat = pos.coords.latitude;
-      myLon = pos.coords.longitude;
-      document.getElementById("status").innerText = "서울시청 방향을 표시합니다!";
-    }, (err) => {
-      document.getElementById("status").innerText = "위치 접근 불가: " + err.message;
-    });
-
-    // 기기 방향 이벤트 (북쪽 0° 기준)
-    window.addEventListener("deviceorientationabsolute", (event) => {
-      if (!myLat || !myLon) return;
-
-      let heading = event.alpha; // 단위: 도(degree), 0~360
-      if (heading === null) {
-        document.getElementById("status").innerText = "나침반 센서 지원 안함";
-        return;
-      }
-
-      // 서울시청 방위각
-      let bearing = getBearing(myLat, myLon, partnerLat, partnerLon);
-      let angle = (bearing - heading + 360) % 360;
-
-      // 화살표 회전
-      document.getElementById("arrow").style.transform = `rotate(${angle}deg)`;
-    });
-
-    // iOS Safari 권한 요청 (iOS13+)
-    document.body.addEventListener("click", () => {
-      if (typeof(DeviceOrientationEvent) !== "undefined" &&
-          typeof(DeviceOrientationEvent.requestPermission) === "function") {
-        DeviceOrientationEvent.requestPermission().then((response) => {
-          if (response === "granted") {
-            document.getElementById("status").innerText = "나침반 권한 허용됨";
-          } else {
-            document.getElementById("status").innerText = "나침반 권한 거부됨";
-          }
-        });
+// 권한 요청 (iOS)
+function requestPermission() {
+  if (DeviceOrientationEvent.requestPermission) {
+    DeviceOrientationEvent.requestPermission().then(res => {
+      if (res === "granted") {
+        window.addEventListener("deviceorientationabsolute", handleOrientation, true);
       }
     });
-  </script>
+  }
+}
+
+// 위치 업데이트
+navigator.geolocation.watchPosition(pos => {
+  currentPos = {
+    lat: pos.coords.latitude,
+    lng: pos.coords.longitude
+  };
+}, err => console.error(err), { enableHighAccuracy:true });
+
+// 기기 방향 이벤트
+window.addEventListener("deviceorientationabsolute", handleOrientation, true);
+window.addEventListener("deviceorientation", handleOrientation, true);
+
+function handleOrientation(event) {
+  let heading;
+  if (event.webkitCompassHeading) {
+    heading = event.webkitCompassHeading; // iOS (북쪽 기준)
+  } else if (event.absolute && event.alpha !== null) {
+    heading = 360 - event.alpha; // Android (대략적 보정, 북쪽 기준)
+  }
+  if (heading !== undefined) {
+    currentHeading = heading;
+    updateArrow();
+  }
+}
+
+function updateArrow() {
+  if (!currentPos) return;
+  const bearing = computeBearing(currentPos, target);
+  let diff = (bearing - currentHeading + 360) % 360;
+  document.getElementById("arrow").style.transform = `rotate(${diff}deg)`;
+  document.getElementById("info").innerText =
+    `나침반:${currentHeading.toFixed(1)}° / 서울시청:${bearing.toFixed(1)}° / 화살표:${diff.toFixed(1)}°`;
+}
+
+// 두 좌표 사이 방위각
+function computeBearing(from, to) {
+  const φ1 = from.lat * Math.PI/180;
+  const φ2 = to.lat * Math.PI/180;
+  const Δλ = (to.lng - from.lng) * Math.PI/180;
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1)*Math.sin(φ2) -
+            Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
+  const θ = Math.atan2(y, x);
+  return (θ*180/Math.PI + 360) % 360;
+}
+</script>
 </body>
 </html>
